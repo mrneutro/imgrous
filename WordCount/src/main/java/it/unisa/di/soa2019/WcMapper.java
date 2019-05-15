@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class WcMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+public class WcMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
     private Logger log = Logger.getLogger(this.getClass().getName());
 
     @Override
@@ -26,9 +26,9 @@ public class WcMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
                 map.put(word, 1);
             }
         }
-        log.info("SPACE REDUCTION " + (words.length - map.size()));
+        log.info("SPACE REDUCTION " + (words.length - map.size()) +" on "+this.hashCode());
         Text keyText = new Text();
-        IntWritable valueInt = new IntWritable();
+        LongWritable valueInt = new LongWritable();
         for (Map.Entry<String, Integer> entry : map.entrySet()) {
             keyText.set(entry.getKey());
             valueInt.set(entry.getValue());

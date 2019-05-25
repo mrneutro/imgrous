@@ -32,10 +32,10 @@ public class WcDriver extends Configured implements Tool {
     public int run(String[] arg0) throws Exception {
         Configuration conf = new Configuration();
         Job job1 = Job.getInstance(conf);
-
         job1.setJobName("LowOrbitWordCount");
         job1.setJarByClass(WcDriver.class);
         job1.setMapperClass(WcMapper.class);
+        job1.setCombinerClass(WcCombiner.class);
         job1.setNumReduceTasks(1);
         job1.setReducerClass(WcReducer.class);
         job1.setInputFormatClass(TextInputFormat.class);

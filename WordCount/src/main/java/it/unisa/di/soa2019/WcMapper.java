@@ -2,37 +2,47 @@ package it.unisa.di.soa2019;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
-public class WcMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
+public class WcMapper extends Mapper<LongWritable, Text, Text, MapWritable> {
     private Logger log = Logger.getLogger(this.getClass().getName());
+    private MapWritable map;
+
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        super.setup(context);
+        map = new <Text, IntWritable>MapWritable();
+    }
+
+    @Override
+    protected void cleanup(Context context) throws IOException, InterruptedException {
+        super.cleanup(context);
+        context.write(new Text("" + map.hashCode()), map);
+    }
 
     @Override
     public void map(LongWritable key, Text value, Context context) throws
             IOException, InterruptedException {
         String line = value.toString();
-        String[] words = line.replaceAll("[^a-zA-Z0-9 ]", "").split(" ");
-        Map<String, Integer> map = new HashMap<>(words.length);
+//        String[] words = line.replaceAll("[^a-zA-Z0-9 ]", "").split(" ");
+        String[] words = line.split(" ");
+
         for (String word : words) {
-            if (map.containsKey(word)) {
-                map.put(word, map.get(word) + 1);
+            Text writableWord = new Text(word);
+            if (map.containsKey(writableWord)) {
+                IntWritable prev = (IntWritable) map.get(writableWord);
+                prev.set(prev.get() + 1);
+                map.put(writableWord, prev);
             } else {
-                map.put(word, 1);
+                map.put(writableWord, new IntWritable(1));
             }
         }
-        log.info("SPACE REDUCTION " + (words.length - map.size()) +" on "+this.hashCode());
-        Text keyText = new Text();
-        LongWritable valueInt = new LongWritable();
-        for (Map.Entry<String, Integer> entry : map.entrySet()) {
-            keyText.set(entry.getKey());
-            valueInt.set(entry.getValue());
-            context.write(keyText, valueInt);
-        }
+
+
     }
 }

@@ -26,6 +26,6 @@ public class WcCombiner extends Reducer<Text, MapWritable, Text, MapWritable> {
                 }
             }
         }
-        context.write(key, localMap);
+        context.write(new Text("single"), localMap);
     }
 }

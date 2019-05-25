@@ -36,7 +36,7 @@ public class WcDriver extends Configured implements Tool {
         job1.setJarByClass(WcDriver.class);
         job1.setMapperClass(WcMapper.class);
         job1.setCombinerClass(WcCombiner.class);
-        job1.setNumReduceTasks(1);
+        job1.setNumReduceTasks(50);
         job1.setReducerClass(WcReducer.class);
         job1.setInputFormatClass(TextInputFormat.class);
         job1.setOutputFormatClass(TextOutputFormat.class);

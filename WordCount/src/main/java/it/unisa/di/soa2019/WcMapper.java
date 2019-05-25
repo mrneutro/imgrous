@@ -7,11 +7,13 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
+import java.util.Random;
 import java.util.logging.Logger;
 
 public class WcMapper extends Mapper<LongWritable, Text, Text, MapWritable> {
     private Logger log = Logger.getLogger(this.getClass().getName());
     private MapWritable map;
+    private Random rand = new Random();
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -22,7 +24,7 @@ public class WcMapper extends Mapper<LongWritable, Text, Text, MapWritable> {
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         super.cleanup(context);
-        context.write(new Text("" + map.hashCode()), map);
+        context.write(new Text("" + rand.nextInt(50)), map);
     }
 
     @Override
@@ -30,6 +32,7 @@ public class WcMapper extends Mapper<LongWritable, Text, Text, MapWritable> {
             IOException, InterruptedException {
         String line = value.toString();
 //        String[] words = line.replaceAll("[^a-zA-Z0-9 ]", "").split(" ");
+        System.out.println(line);
         String[] words = line.split(" ");
 
         for (String word : words) {

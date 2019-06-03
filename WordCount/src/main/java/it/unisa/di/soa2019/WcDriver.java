@@ -21,7 +21,7 @@ import java.util.Date;
 
 public class WcDriver extends Configured implements Tool {
 
-    public static void main(String[] args) throws Exception {
+    public static void secondary_main(String[] args) throws Exception {
         System.setProperty("java.util.logging.SimpleFormatter.format",
                 "[%1$tF %1$tT] [%4$-7s] %5$s %n");
         int exitCode = ToolRunner.run(new WcDriver(), args);

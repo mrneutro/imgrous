@@ -5,8 +5,11 @@ import it.unisa.di.soa2019.indexing.IndexingReducer;
 import it.unisa.di.soa2019.indexing.StringWritable;
 import it.unisa.di.soa2019.partitioning.GroupPartitioningMapper;
 import it.unisa.di.soa2019.partitioning.GroupPartitioningReducer;
+import it.unisa.di.soa2019.similarity.SimilarityMapper;
+import it.unisa.di.soa2019.similarity.SimilarityReducer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -41,8 +44,8 @@ public class DsDriver {
 
         FileInputFormat.addInputPath(j1, new Path(input));
         boolean err = j1.waitForCompletion(true);
-        if (err) {
-//            System.exit(-1);
+        if (!err) {
+            System.exit(-1);
         }
 
         conf = new Configuration();
@@ -58,22 +61,31 @@ public class DsDriver {
         j2.setOutputValueClass(MapWritable.class);
 
         FileInputFormat.addInputPath(j2, new Path(args[1] + strDate, "inter/part-r-00000"));
-        FileOutputFormat.setOutputPath(j2, new Path(args[1] + strDate, "final"));
+        FileOutputFormat.setOutputPath(j2, new Path(args[1] + strDate, "indexer"));
 
         err = j2.waitForCompletion(true);
-        System.out.println(err);
-       /* j1 = Job.getInstance(conf, "Final");
-//        j1.setNumReduceTasks(tasks);
-        j1.setJarByClass(DocumentSimilarity.class);
-        j1.setMapperClass(FinalMapper.class);
-        j1.setReducerClass(FinalReducer.class);
-//        j1.setPartitionerClass(FinalPartitioner.class);
-        j1.setOutputKeyClass(IntPair.class);
-        j1.setOutputValueClass(Text.class);
-        FileInputFormat.addInputPath(j1, temp);
-        FileOutputFormat.setOutputPath(j1, new Path(output));
-        j1.waitForCompletion(true);*/
+        if (!err) {
+            System.exit(-1);
+        }
 
+        conf = new Configuration();
+        Job j3 = Job.getInstance(conf, "DocSim - Similarity");
+
+        j3.setJarByClass(DsDriver.class);
+        j3.setMapperClass(SimilarityMapper.class);
+        j3.setReducerClass(SimilarityReducer.class);
+        j3.setMapOutputKeyClass(StringWritable.class);
+        j3.setMapOutputValueClass(IntWritable.class);
+        j3.setOutputKeyClass(StringWritable.class);
+        j3.setOutputValueClass(IntWritable.class);
+
+        FileInputFormat.addInputPath(j3, new Path(args[1] + strDate, "indexer/part-r-00000"));
+        FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate, "final"));
+
+        err = j3.waitForCompletion(true);
+        if (!err) {
+            System.exit(-1);
+        }
     }
 
 }

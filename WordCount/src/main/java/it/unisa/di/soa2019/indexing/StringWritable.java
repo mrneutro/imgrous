@@ -28,7 +28,9 @@ public class StringWritable implements WritableComparable<StringWritable> {
 
     @Override
     public int compareTo(StringWritable o) {
-        return o.getKey().compareTo(o.getVal());
+        String s1 = o.getKey() + o.getVal();
+        String s2 = this.getKey() + this.getVal();
+        return s1.compareTo(s2);
     }
 
     @Override

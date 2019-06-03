@@ -14,7 +14,6 @@ import java.util.Set;
 
 public class GroupPartitioningReducer extends Reducer<Text, MapWritable, Text, Text> {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(GroupPartitioningMapper.class);
-    Text key;
 
 
     @Override

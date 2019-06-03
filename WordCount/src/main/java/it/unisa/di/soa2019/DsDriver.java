@@ -14,7 +14,9 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -36,6 +38,7 @@ public class DsDriver {
         j1.setMapOutputValueClass(MapWritable.class);
         j1.setOutputKeyClass(Text.class);
         j1.setOutputValueClass(Text.class);
+//        j1.setOutputFormatClass(SequenceFileOutputFormat.class);
         Date date = Calendar.getInstance().getTime();
         DateFormat dateFormat = new SimpleDateFormat("yyyymmdd_hhmmss");
         String strDate = dateFormat.format(date);
@@ -59,7 +62,8 @@ public class DsDriver {
         j2.setMapOutputValueClass(StringWritable.class);
         j2.setOutputKeyClass(Text.class);
         j2.setOutputValueClass(MapWritable.class);
-
+//        j2.setInputFormatClass(SequenceFileInputFormat.class);
+        j2.setOutputFormatClass(SequenceFileOutputFormat.class);
         FileInputFormat.addInputPath(j2, new Path(args[1] + strDate, "inter/part-r-00000"));
         FileOutputFormat.setOutputPath(j2, new Path(args[1] + strDate, "indexer"));
 
@@ -78,6 +82,7 @@ public class DsDriver {
         j3.setMapOutputValueClass(IntWritable.class);
         j3.setOutputKeyClass(StringWritable.class);
         j3.setOutputValueClass(IntWritable.class);
+        j3.setInputFormatClass(SequenceFileInputFormat.class);
 
         FileInputFormat.addInputPath(j3, new Path(args[1] + strDate, "indexer/part-r-00000"));
         FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate, "final"));

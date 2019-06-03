@@ -44,4 +44,9 @@ public class StringWritable implements WritableComparable<StringWritable> {
         key = dataInput.readUTF();
         val = dataInput.readUTF();
     }
+
+    @Override
+    public String toString() {
+        return "(" + key + "," + val + ")";
+    }
 }

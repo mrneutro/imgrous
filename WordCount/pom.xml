@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>it.unisa.di.soa2019</groupId>
-    <artifactId>wordcount</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
+    <artifactId>similarity</artifactId>
+    <version>0.1.0</version>
     <build>
         <plugins>
             <plugin>

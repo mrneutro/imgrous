@@ -42,7 +42,7 @@ public class DsDriver {
         Date date = Calendar.getInstance().getTime();
         DateFormat dateFormat = new SimpleDateFormat("yyyymmdd_hhmmss");
         String strDate = dateFormat.format(date);
-        FileOutputFormat.setOutputPath(j1, new Path(args[1] + strDate, "inter"));
+        FileOutputFormat.setOutputPath(j1, new Path(args[1] + strDate + "inter"));
 
 
         FileInputFormat.addInputPath(j1, new Path(input));
@@ -64,8 +64,8 @@ public class DsDriver {
         j2.setOutputValueClass(MapWritable.class);
 //        j2.setInputFormatClass(SequenceFileInputFormat.class);
         j2.setOutputFormatClass(SequenceFileOutputFormat.class);
-        FileInputFormat.addInputPath(j2, new Path(args[1] + strDate, "inter/part-r-00000"));
-        FileOutputFormat.setOutputPath(j2, new Path(args[1] + strDate, "indexer"));
+        FileInputFormat.addInputPath(j2, new Path(args[1] + strDate + "inter"));
+        FileOutputFormat.setOutputPath(j2, new Path(args[1] + strDate + "indexer"));
 
         err = j2.waitForCompletion(true);
         if (!err) {
@@ -84,8 +84,8 @@ public class DsDriver {
         j3.setOutputValueClass(IntWritable.class);
         j3.setInputFormatClass(SequenceFileInputFormat.class);
 
-        FileInputFormat.addInputPath(j3, new Path(args[1] + strDate, "indexer/part-r-00000"));
-        FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate, "final"));
+        FileInputFormat.addInputPath(j3, new Path(args[1] + strDate + "indexer"));
+        FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate + "final"));
 
         err = j3.waitForCompletion(true);
         if (!err) {

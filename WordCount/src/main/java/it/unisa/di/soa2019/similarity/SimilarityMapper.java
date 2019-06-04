@@ -1,7 +1,10 @@
 package it.unisa.di.soa2019.similarity;
 
 import it.unisa.di.soa2019.indexing.StringWritable;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.slf4j.LoggerFactory;
 

@@ -10,7 +10,6 @@ import it.unisa.di.soa2019.similarity.SimilarityReducer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -75,6 +74,9 @@ public class DsDriver {
         }
 
         conf = new Configuration();
+        conf.set("mapreduce.input.fileinputformat.split.maxsize", "8388608");
+        conf.set("mapred.max.split.size", "8388608");
+//        conf.set("mapred.tasktracker.map.tasks.maximum", "6");
         Job j3 = Job.getInstance(conf, "DocSim - Similarity");
 
         j3.setJarByClass(DsDriver.class);
@@ -85,7 +87,7 @@ public class DsDriver {
         j3.setOutputKeyClass(StringWritable.class);
         j3.setOutputValueClass(DoubleWritable.class);
         j3.setInputFormatClass(SequenceFileInputFormat.class);
-        j3.setNumReduceTasks(1);
+        j3.setNumReduceTasks(10);
 
         FileInputFormat.addInputPath(j3, new Path(args[1] + strDate + "indexer"));
         FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate + "final"));

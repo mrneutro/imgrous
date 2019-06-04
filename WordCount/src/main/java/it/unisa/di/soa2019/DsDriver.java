@@ -9,6 +9,7 @@ import it.unisa.di.soa2019.similarity.SimilarityMapper;
 import it.unisa.di.soa2019.similarity.SimilarityReducer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
@@ -80,11 +81,11 @@ public class DsDriver {
         j3.setMapperClass(SimilarityMapper.class);
         j3.setReducerClass(SimilarityReducer.class);
         j3.setMapOutputKeyClass(StringWritable.class);
-        j3.setMapOutputValueClass(IntWritable.class);
+        j3.setMapOutputValueClass(DoubleWritable.class);
         j3.setOutputKeyClass(StringWritable.class);
-        j3.setOutputValueClass(IntWritable.class);
+        j3.setOutputValueClass(DoubleWritable.class);
         j3.setInputFormatClass(SequenceFileInputFormat.class);
-        j3.setNumReduceTasks(10);
+        j3.setNumReduceTasks(1);
 
         FileInputFormat.addInputPath(j3, new Path(args[1] + strDate + "indexer"));
         FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate + "final"));

@@ -25,7 +25,7 @@ public class GroupPartitioningReducer extends Reducer<Text, MapWritable, Text, T
                 if (mymap.containsKey(iterKeyStr)) {
                     mymap.put(iterKeyStr, mymap.get(iterKeyStr) + ((IntWritable) map.get(iterKey)).get());
                 } else {
-                    mymap.put(iterKeyStr, ((DoubleWritable) map.get(iterKey)).get());
+                    mymap.put(iterKeyStr, (double) ((IntWritable) map.get(iterKey)).get());
                 }
             }
         }

@@ -15,20 +15,6 @@ import java.util.Set;
 public class GroupPartitioningReducer extends Reducer<Text, MapWritable, Text, Text> {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(GroupPartitioningMapper.class);
 
-
-    @Override
-    protected void setup(Context context) throws IOException, InterruptedException {
-        super.setup(context);
-//        megamap = new <Text, IntWritable>MapWritable();
-
-    }
-
-    @Override
-    protected void cleanup(Context context) throws IOException, InterruptedException {
-        super.cleanup(context);
-
-    }
-
     @Override
     public void reduce(Text key, Iterable<MapWritable> values, Context context) throws
             IOException, InterruptedException {

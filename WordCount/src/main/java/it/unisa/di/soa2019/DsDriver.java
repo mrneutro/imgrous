@@ -29,7 +29,9 @@ public class DsDriver {
         String input = args[0];
 
         Job j1 = Job.getInstance(conf, "DocSim - Group partitioning");
-
+        conf.set("mapreduce.input.fileinputformat.split.maxsize", "73400320");
+        conf.set("mapreduce.map.memory.mb", "4096");
+        conf.set("mapreduce.map.java.opts", "-Xmx3286m");
         j1.setJarByClass(DsDriver.class);
         j1.setMapperClass(GroupPartitioningMapper.class);
         j1.setReducerClass(GroupPartitioningReducer.class);
@@ -75,6 +77,10 @@ public class DsDriver {
 
         conf = new Configuration();
         conf.set("mapreduce.input.fileinputformat.split.maxsize", "8388608");
+        conf.set("mapreduce.map.memory.mb", "4096");
+        conf.set("mapreduce.map.java.opts", "-Xmx3286m");
+        conf.set("mapreduce.reduce.memory.mb", "4096");
+        conf.set("mapreduce.reduce.java.opts", "-Xmx3286m");
         conf.set("mapred.max.split.size", "8388608");
 //        conf.set("mapred.tasktracker.map.tasks.maximum", "6");
         Job j3 = Job.getInstance(conf, "DocSim - Similarity");
@@ -87,7 +93,7 @@ public class DsDriver {
         j3.setOutputKeyClass(StringWritable.class);
         j3.setOutputValueClass(DoubleWritable.class);
         j3.setInputFormatClass(SequenceFileInputFormat.class);
-        j3.setNumReduceTasks(10);
+        j3.setNumReduceTasks(100);
 
         FileInputFormat.addInputPath(j3, new Path(args[1] + strDate + "indexer"));
         FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate + "final"));

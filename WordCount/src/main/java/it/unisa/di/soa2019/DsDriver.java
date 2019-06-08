@@ -93,7 +93,7 @@ public class DsDriver {
         j3.setOutputKeyClass(StringWritable.class);
         j3.setOutputValueClass(DoubleWritable.class);
         j3.setInputFormatClass(SequenceFileInputFormat.class);
-        j3.setNumReduceTasks(100);
+        j3.setNumReduceTasks(1);
 
         FileInputFormat.addInputPath(j3, new Path(args[1] + strDate + "indexer"));
         FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate + "final"));

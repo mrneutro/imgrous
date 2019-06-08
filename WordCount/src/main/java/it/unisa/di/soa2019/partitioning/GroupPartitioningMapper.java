@@ -73,7 +73,7 @@ public class GroupPartitioningMapper extends Mapper<LongWritable, Text, Text, Ma
             }
 
 //                log.info("values.length: " + values.length);
-            String[] words = values[3].replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").toLowerCase().split(" ");
+            String[] words = values[3].replaceAll("\\n", " ").replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").toLowerCase().split(" ");
             String group_id = values[2];
             MapWritable localMap = null;
             if (groupMap.containsKey(group_id)) {
@@ -107,16 +107,15 @@ public class GroupPartitioningMapper extends Mapper<LongWritable, Text, Text, Ma
                 } else {
                     localMap.put(writableWord, new IntWritable(1));
                 }
-              /*
-                Text writableWord = new Text(word);
-                if (localMap.containsKey(writableWord)) {
-                    IntWritable prev = (IntWritable) localMap.get(writableWord);
-                    prev.set(prev.get() + 1);
-                    localMap.put(writableWord, prev);
-                } else {
-                    localMap.put(writableWord, new IntWritable(1));
-                }
-               */
+
+//                Text writableWord = new Text(word);
+//                if (localMap.containsKey(writableWord)) {
+//                    IntWritable prev = (IntWritable) localMap.get(writableWord);
+//                    prev.set(prev.get() + 1);
+//                    localMap.put(writableWord, prev);
+//                } else {
+//                    localMap.put(writableWord, new IntWritable(1));
+//                }
             }
         } catch (Exception e) {
             log.error(e.toString());

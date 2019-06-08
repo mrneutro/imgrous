@@ -1,4 +1,5 @@
-360353626,176332,1111111111,"life, Quali, sono?",it
+message.from_id,message.id,message.to_id.channel_id,message.message,message.lang
+360353626,176332,1111111111,life Quali sono?,it
 663658084,1650077,1190666456,Chi giocasse da ps4,it
 663658084,1650077,1190666456,уходил далековато,ru
 360353656,176331,2222222222,Love of my life youve hurt me,it

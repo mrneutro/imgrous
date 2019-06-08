@@ -20,7 +20,7 @@
     </build>
     <packaging>jar</packaging>
 
-    <name>wordcount</name>
+    <name>GroupSimilarityIndexer</name>
     <url>http://maven.apache.org</url>
 
     <properties>

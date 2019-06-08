@@ -1,4 +1,4 @@
-package it.unisa.di.soa2019;
+package it.unisa.di.soa2019.partitioning;
 
 import java.util.Arrays;
 import java.util.HashSet;

@@ -1,6 +1,5 @@
 package it.unisa.di.soa2019.partitioning;
 
-import it.unisa.di.soa2019.StopWords;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;

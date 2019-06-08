@@ -6,6 +6,8 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.slf4j.LoggerFactory;
+import org.tartarus.snowball.SnowballStemmer;
+import org.tartarus.snowball.ext.italianStemmer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,6 +45,8 @@ public class GroupPartitioningMapper extends Mapper<LongWritable, Text, Text, Ma
     @Override
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         try {
+            SnowballStemmer stemmerIT = (SnowballStemmer) new italianStemmer();
+
             String line = value.toString();
             log.info(line);
             values = line.split(",", 5);
@@ -60,6 +64,19 @@ public class GroupPartitioningMapper extends Mapper<LongWritable, Text, Text, Ma
                 if (word.length() == 0) {
                     continue;
                 }
+                stemmerIT.setCurrent(word);
+                stemmerIT.stem();
+                String stemmed = stemmerIT.getCurrent();
+
+                Text writableWord = new Text(stemmed);
+                if (localMap.containsKey(writableWord)) {
+                    IntWritable prev = (IntWritable) localMap.get(writableWord);
+                    prev.set(prev.get() + 1);
+                    localMap.put(writableWord, prev);
+                } else {
+                    localMap.put(writableWord, new IntWritable(1));
+                }
+              /*
                 Text writableWord = new Text(word);
                 if (localMap.containsKey(writableWord)) {
                     IntWritable prev = (IntWritable) localMap.get(writableWord);
@@ -68,6 +85,7 @@ public class GroupPartitioningMapper extends Mapper<LongWritable, Text, Text, Ma
                 } else {
                     localMap.put(writableWord, new IntWritable(1));
                 }
+               */
             }
         } catch (Exception e) {
             log.error(e.toString());

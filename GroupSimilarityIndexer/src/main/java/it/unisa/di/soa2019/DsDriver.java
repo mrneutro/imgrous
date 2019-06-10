@@ -40,7 +40,7 @@ public class DsDriver {
         j1.setMapOutputValueClass(MapWritable.class);
         j1.setOutputKeyClass(Text.class);
         j1.setOutputValueClass(Text.class);
-        j1.setNumReduceTasks(50);
+        j1.setNumReduceTasks(24);
 //        j1.setOutputFormatClass(SequenceFileOutputFormat.class);
         Date date = Calendar.getInstance().getTime();
         DateFormat dateFormat = new SimpleDateFormat("yyyymmdd_hhmmss");
@@ -55,6 +55,12 @@ public class DsDriver {
         }
 
         conf = new Configuration();
+        conf.set("mapreduce.input.fileinputformat.split.maxsize", "8388608");
+        conf.set("mapreduce.map.memory.mb", "2048");
+        conf.set("mapreduce.map.java.opts", "-Xmx1638m");
+        conf.set("mapreduce.reduce.memory.mb", "4096");
+        conf.set("mapreduce.reduce.java.opts", "-Xmx3286m");
+        conf.set("mapred.max.split.size", "8388608");
         Job j2 = Job.getInstance(conf, "DocSim - Indexing");
 
         j2.setJarByClass(DsDriver.class);
@@ -93,7 +99,7 @@ public class DsDriver {
         j3.setOutputKeyClass(StringWritable.class);
         j3.setOutputValueClass(DoubleWritable.class);
         j3.setInputFormatClass(SequenceFileInputFormat.class);
-        j3.setNumReduceTasks(10);
+        j3.setNumReduceTasks(24);
 
         FileInputFormat.addInputPath(j3, new Path(args[1] + strDate + "indexer"));
         FileOutputFormat.setOutputPath(j3, new Path(args[1] + strDate + "final"));

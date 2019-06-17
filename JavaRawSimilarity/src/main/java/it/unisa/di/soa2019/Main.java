@@ -1,5 +1,11 @@
 package it.unisa.di.soa2019;
 
+import org.tartarus.snowball.SnowballStemmer;
+import org.tartarus.snowball.ext.englishStemmer;
+import org.tartarus.snowball.ext.italianStemmer;
+import org.tartarus.snowball.ext.russianStemmer;
+import org.tartarus.snowball.ext.spanishStemmer;
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,6 +31,8 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private Map<Integer, List<String>> mapSimilarityLines;
     private File filePart;
 
+    private HashMap<String, SnowballStemmer> stemmersMap;
+    private SnowballStemmer genericStemmer = (SnowballStemmer) new englishStemmer();
 
     public static void main(String[] args) throws IOException {
         Main main = new Main();
@@ -71,6 +79,13 @@ public class Main implements PartitioningInterface, SimilarityInterface {
 
     public Map<Integer, Map<Long, List<String>>> inputSplit(int numSplits) {
         String[] values;
+
+        stemmersMap = new HashMap<String, SnowballStemmer>(4);
+        stemmersMap.put("it", new italianStemmer());
+        stemmersMap.put("ru", new russianStemmer());
+        stemmersMap.put("es", new spanishStemmer());
+        stemmersMap.put("en", new englishStemmer());
+
         long numLine = 0;
         Map<Integer, Map<Long, List<String>>> mapPartitioningLists = new HashMap<>();
         for (int i = 0; i < numSplits; i++) {
@@ -82,6 +97,17 @@ public class Main implements PartitioningInterface, SimilarityInterface {
             values = line.split(",", 5);
             String[] words = values[3].replaceAll("[^\b a-zA-Z0-9]", "").toLowerCase().split("\\s+");
             String group_id = values[2];
+
+            String lang = null;
+            if (values.length > 5) {
+                lang = values[values.length - 1];
+                for (int i = 4; i < values.length - 1; i++) {
+                    values[3] = values[3] + values[i]; // TODO use string builder here
+                }
+            } else {
+                lang = values[4];
+            }
+
             if (words != null && words.length >= 1 && !words[0].isEmpty()) {
                 try {
                     Long.parseLong(group_id);
@@ -97,7 +123,19 @@ public class Main implements PartitioningInterface, SimilarityInterface {
 
                     List<String> wordList = mapPartitioningList.get(Long.parseLong(group_id));
                     for (String word : words) {
-                        wordList.add(word);
+                        SnowballStemmer currentStemmer = null;
+                        if (stemmersMap.containsKey(lang)) {
+                            currentStemmer = stemmersMap.get(lang);
+                        } else {
+                            currentStemmer = genericStemmer;
+                        }
+                        if (StopWords.getInstance().isStopWord(word)) {
+                            continue;
+                        }
+                        currentStemmer.setCurrent(word);
+                        currentStemmer.stem();
+                        String stemmed = currentStemmer.getCurrent();
+                        wordList.add(stemmed);
                     }
                 }
             }

@@ -25,7 +25,7 @@ public class SimilarityRunnable implements Runnable {
     @Override
     public void run() {
         threadID = Thread.currentThread().getId();
-        System.out.println("Thread " + threadID % 4 + " running");
+//        System.out.println("Thread " + threadID % 4 + " running");
         try {
             if(linesCmp){
                 main.callbackSimilarity(calcLinesCmp());

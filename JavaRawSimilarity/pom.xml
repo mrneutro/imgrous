@@ -17,7 +17,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>it.unisa.di.soa2019.SequentialSimilarity</mainClass>
+                            <mainClass>it.unisa.di.soa2019.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

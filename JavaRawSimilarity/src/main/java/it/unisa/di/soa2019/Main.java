@@ -1,5 +1,7 @@
 package it.unisa.di.soa2019;
-
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
 import org.tartarus.snowball.SnowballStemmer;
 import org.tartarus.snowball.ext.englishStemmer;
 import org.tartarus.snowball.ext.italianStemmer;
@@ -29,6 +31,8 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private Double norma;
     private FileOutputStream fileSimOut;
     private Map<Integer, List<String>> mapSimilarityLines;
+
+    private Map<String, MapWritable> groupMap;
 
     private File filePart;
     private ProgressBar progressBarPartitioning;
@@ -94,7 +98,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
 
     public Map<Integer, Map<Long, List<String>>> inputSplit(int numSplits) throws IOException {
         String[] values;
-
+        groupMap = new HashMap<>(500);
         stemmersMap = new HashMap<String, SnowballStemmer>(4);
         stemmersMap.put("it", new italianStemmer());
         stemmersMap.put("ru", new russianStemmer());
@@ -110,27 +114,31 @@ public class Main implements PartitioningInterface, SimilarityInterface {
             String line = scIn.nextLine();
             boolean validLine = true;
             values = line.split(",", 5);
+            String lang = null;
+            if (values.length > 5) {
+                lang = values[values.length - 1];
+                for (int i = 4; i < values.length - 1; i++) {
+                    values[3] = values[3] + values[i]; // TODO use string builder here
+                }
+            } else {
+                lang = values[4];
+            }
             if (values.length > 3) {
                 String[] words = values[3].replaceAll("\\n", " ").replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").toLowerCase().split(" ");
                 String group_id = values[2];
-
-                String lang = null;
-                if (values.length > 5) {
-                    lang = values[values.length - 1];
-                    for (int i = 4; i < values.length - 1; i++) {
-                        values[3] = values[3] + values[i]; // TODO use string builder here
-                    }
+                MapWritable localMap = null;
+                if (groupMap.containsKey(group_id)) {
+                    localMap = groupMap.get(group_id);
                 } else {
-                    lang = values[4];
+                    localMap = new <Text, IntWritable>MapWritable();
+                    groupMap.put(group_id, localMap);
                 }
-
                 if (words != null && words.length >= 1 && !words[0].isEmpty()) {
                     try {
                         Long.parseLong(group_id);
                     } catch (NumberFormatException e) {
                         validLine = false;
                     }
-
                     if (validLine) {
                         Map<Long, List<String>> mapPartitioningList = mapPartitioningLists.get(new Long(numLine % numSplits).intValue());
                         if (!mapPartitioningList.containsKey(Long.parseLong(group_id))) {

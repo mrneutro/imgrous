@@ -32,8 +32,6 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private FileOutputStream fileSimOut;
     private Map<Integer, List<String>> mapSimilarityLines;
 
-    private Map<String, MapWritable> groupMap;
-
     private File filePart;
     private ProgressBar progressBarPartitioning;
     private int total, done;
@@ -82,7 +80,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
         done = 0;
         numThread = new AtomicInteger(numberOfProcessors);
         for (int i = 0; i < numberOfProcessors; i++) {
-            partitioningRunnable = new PartitioningRunnable(this, mapPartitioningLists.get(i));
+            partitioningRunnable = new PartitioningRunnable(this, new HashMap<Long, List<String>>(mapPartitioningLists.get(i)));
             Thread thread = new Thread(partitioningRunnable);
             thread.start();
         }
@@ -98,8 +96,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
 
     public Map<Integer, Map<Long, List<String>>> inputSplit(int numSplits) throws IOException {
         String[] values;
-        groupMap = new HashMap<>(500);
-        stemmersMap = new HashMap<String, SnowballStemmer>(4);
+        stemmersMap = new HashMap<>(4);
         stemmersMap.put("it", new italianStemmer());
         stemmersMap.put("ru", new russianStemmer());
         stemmersMap.put("es", new spanishStemmer());
@@ -113,27 +110,21 @@ public class Main implements PartitioningInterface, SimilarityInterface {
         while (scIn.hasNextLine()) {
             String line = scIn.nextLine();
             boolean validLine = true;
-            values = line.split(",", 5);
+            values = line.split(",");
 
-            String lang = null;
-            if (values.length > 5) {
-                lang = values[values.length - 1];
-                for (int i = 4; i < values.length - 1; i++) {
-                    values[3] = values[3] + values[i]; // TODO use string builder here
-                }
-            } else {
-                lang = values[4];
-            }
             if (values.length > 3) {
+                String lang = null;
+                if (values.length > 5) {
+                    lang = values[values.length - 1];
+                    for (int i = 4; i < values.length - 1; i++) {
+                        values[3] = values[3] + values[i]; // TODO use string builder here
+                    }
+                } else {
+                    lang = values[4];
+                }
+
                 String[] words = values[3].replaceAll("\\n", " ").replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").toLowerCase().split(" ");
                 String group_id = values[2];
-                MapWritable localMap = null;
-                if (groupMap.containsKey(group_id)) {
-                    localMap = groupMap.get(group_id);
-                } else {
-                    localMap = new <Text, IntWritable>MapWritable();
-                    groupMap.put(group_id, localMap);
-                }
                 if (words != null && words.length >= 1 && !words[0].isEmpty()) {
                     try {
                         Long.parseLong(group_id);
@@ -148,6 +139,9 @@ public class Main implements PartitioningInterface, SimilarityInterface {
 
                         List<String> wordList = mapPartitioningList.get(Long.parseLong(group_id));
                         for (String word : words) {
+                            if (word.length() == 0) {
+                                continue;
+                            }
                             SnowballStemmer currentStemmer = null;
                             if (stemmersMap.containsKey(lang)) {
                                 currentStemmer = stemmersMap.get(lang);
@@ -161,14 +155,6 @@ public class Main implements PartitioningInterface, SimilarityInterface {
                             currentStemmer.stem();
                             String stemmed = currentStemmer.getCurrent();
                             wordList.add(stemmed);
-                            Text writableWord = new Text(stemmed);
-                            if (localMap.containsKey(writableWord)) {
-                                IntWritable prev = (IntWritable) localMap.get(writableWord);
-                                prev.set(prev.get() + 1);
-                                localMap.put(writableWord, prev);
-                            } else {
-                                localMap.put(writableWord, new IntWritable(1));
-                            }
                         }
                     }
                     if (numLine % ITER_SIZE == 0) {

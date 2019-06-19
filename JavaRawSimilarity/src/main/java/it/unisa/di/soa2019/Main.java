@@ -114,6 +114,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
             String line = scIn.nextLine();
             boolean validLine = true;
             values = line.split(",", 5);
+
             String lang = null;
             if (values.length > 5) {
                 lang = values[values.length - 1];
@@ -160,6 +161,14 @@ public class Main implements PartitioningInterface, SimilarityInterface {
                             currentStemmer.stem();
                             String stemmed = currentStemmer.getCurrent();
                             wordList.add(stemmed);
+                            Text writableWord = new Text(stemmed);
+                            if (localMap.containsKey(writableWord)) {
+                                IntWritable prev = (IntWritable) localMap.get(writableWord);
+                                prev.set(prev.get() + 1);
+                                localMap.put(writableWord, prev);
+                            } else {
+                                localMap.put(writableWord, new IntWritable(1));
+                            }
                         }
                     }
                     if (numLine % ITER_SIZE == 0) {

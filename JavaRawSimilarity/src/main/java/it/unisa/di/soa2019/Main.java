@@ -19,7 +19,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private AtomicInteger numThread;
     private PartitioningRunnable partitioningRunnable;
     private SimilarityRunnable similarityRunnable;
-    private final int ITER_SIZE = 10;
+    public final int ITER_SIZE = 10000000;
     private Map<Long, Map<String, Long>> mapPartitioning;
 //    private Map<Long, Map<String, Double>> mapSimilarity;
     private List<Map<Long, Map<String, Long>>> mapPartitioningList;
@@ -112,7 +112,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
             boolean validLine = true;
             values = line.split(",");
 
-            if (values.length > 3) {
+            if (values.length > 4) {
                 String lang = null;
                 if (values.length > 5) {
                     lang = values[values.length - 1];
@@ -120,16 +120,22 @@ public class Main implements PartitioningInterface, SimilarityInterface {
                         values[3] = values[3] + values[i]; // TODO use string builder here
                     }
                 } else {
-                    lang = values[4];
+                    try {
+                        lang = values[4];
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        lang = "unknown";
+                    }
                 }
 
-                String[] words = values[3].replaceAll("\\n", " ").replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").toLowerCase().split(" ");
+                String[] words = values[3].replaceAll("\\n", " ").replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").trim().toLowerCase().split(" ");
                 String group_id = values[2];
-                if (words != null && words.length >= 1 && !words[0].isEmpty()) {
+                if (words != null && words.length >= 1) {
                     try {
                         Long.parseLong(group_id);
                     } catch (NumberFormatException e) {
                         validLine = false;
+//                        e.printStackTrace();
                     }
                     if (validLine) {
                         Map<Long, List<String>> mapPartitioningList = mapPartitioningLists.get(new Long(numLine % numSplits).intValue());
@@ -142,6 +148,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
                             if (word.length() == 0) {
                                 continue;
                             }
+
                             SnowballStemmer currentStemmer = null;
                             if (stemmersMap.containsKey(lang)) {
                                 currentStemmer = stemmersMap.get(lang);

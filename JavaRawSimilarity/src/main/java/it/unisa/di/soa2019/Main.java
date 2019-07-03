@@ -1,7 +1,4 @@
 package it.unisa.di.soa2019;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
 import org.tartarus.snowball.SnowballStemmer;
 import org.tartarus.snowball.ext.englishStemmer;
 import org.tartarus.snowball.ext.italianStemmer;
@@ -19,7 +16,8 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private AtomicInteger numThread;
     private PartitioningRunnable partitioningRunnable;
     private SimilarityRunnable similarityRunnable;
-    public final int ITER_SIZE = 10000000;
+//    public final int ITER_SIZE = 10000000;
+    public final int ITER_SIZE = 1000;
     private Map<Long, Map<String, Long>> mapPartitioning;
 //    private Map<Long, Map<String, Double>> mapSimilarity;
     private List<Map<Long, Map<String, Long>>> mapPartitioningList;
@@ -33,11 +31,6 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private Map<Integer, List<String>> mapSimilarityLines;
 
     private File filePart;
-    private ProgressBar progressBarPartitioning;
-    private int total, done;
-
-    private HashMap<String, SnowballStemmer> stemmersMap;
-    private SnowballStemmer genericStemmer = (SnowballStemmer) new englishStemmer();
 
     public static void main(String[] args) throws IOException {
         Main main = new Main();
@@ -74,13 +67,13 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     }
 
     public void threadPartitioningStart(int numberOfProcessors) throws IOException {
-        Map<Integer, Map<Long, List<String>>> mapPartitioningLists = inputSplit(numberOfProcessors);
+        Map<Integer, List<List<String>>> mapPartitioningLists = inputSplit(numberOfProcessors);
 
-        total = 0;
-        done = 0;
         numThread = new AtomicInteger(numberOfProcessors);
         for (int i = 0; i < numberOfProcessors; i++) {
-            partitioningRunnable = new PartitioningRunnable(this, new HashMap<Long, List<String>>(mapPartitioningLists.get(i)));
+            List<List<String>> mapPartitioningListsClone = new ArrayList<>();
+            mapPartitioningListsClone.addAll(mapPartitioningLists.get(i));
+            partitioningRunnable = new PartitioningRunnable(this, mapPartitioningListsClone);
             Thread thread = new Thread(partitioningRunnable);
             thread.start();
         }
@@ -94,26 +87,22 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     }
 
 
-    public Map<Integer, Map<Long, List<String>>> inputSplit(int numSplits) throws IOException {
+    public Map<Integer, List<List<String>>> inputSplit(int numSplits) throws IOException {
         String[] values;
-        stemmersMap = new HashMap<>(4);
-        stemmersMap.put("it", new italianStemmer());
-        stemmersMap.put("ru", new russianStemmer());
-        stemmersMap.put("es", new spanishStemmer());
-        stemmersMap.put("en", new englishStemmer());
 
         long numLine = 0;
-        Map<Integer, Map<Long, List<String>>> mapPartitioningLists = new HashMap<>();
+        Map<Integer, List<List<String>>> mapPartitioningLists = new HashMap<>();
         for (int i = 0; i < numSplits; i++) {
-            mapPartitioningLists.put(i, (Map) new HashMap<>());
+            mapPartitioningLists.put(i, (List) new ArrayList<>());
         }
         while (scIn.hasNextLine()) {
+            List<String> wordList = new ArrayList<>();
             String line = scIn.nextLine();
             boolean validLine = true;
             values = line.split(",");
+            String lang = null;
 
             if (values.length > 4) {
-                String lang = null;
                 if (values.length > 5) {
                     lang = values[values.length - 1];
                     for (int i = 4; i < values.length - 1; i++) {
@@ -138,35 +127,14 @@ public class Main implements PartitioningInterface, SimilarityInterface {
 //                        e.printStackTrace();
                     }
                     if (validLine) {
-                        Map<Long, List<String>> mapPartitioningList = mapPartitioningLists.get(new Long(numLine % numSplits).intValue());
-                        if (!mapPartitioningList.containsKey(Long.parseLong(group_id))) {
-                            mapPartitioningList.put(Long.parseLong(group_id), (List) new ArrayList<>());
-                        }
-
-                        List<String> wordList = mapPartitioningList.get(Long.parseLong(group_id));
-                        for (String word : words) {
-                            if (word.length() == 0) {
-                                continue;
-                            }
-
-                            SnowballStemmer currentStemmer = null;
-                            if (stemmersMap.containsKey(lang)) {
-                                currentStemmer = stemmersMap.get(lang);
-                            } else {
-                                currentStemmer = genericStemmer;
-                            }
-                            if (StopWords.getInstance().isStopWord(word)) {
-                                continue;
-                            }
-                            currentStemmer.setCurrent(word);
-                            currentStemmer.stem();
-                            String stemmed = currentStemmer.getCurrent();
-                            wordList.add(stemmed);
-                        }
+                        wordList.add(group_id);
+                        wordList.add(lang);
+                        wordList.addAll(Arrays.asList(words));
+                        mapPartitioningLists.get(new Long(numLine % numSplits).intValue()).add(wordList);
                     }
                     if (numLine % ITER_SIZE == 0) {
-                        Map<Integer, Map<Long, List<String>>> mapPartitioningListsTmp = new HashMap<>();
-                        for (Map.Entry<Integer, Map<Long, List<String>>> entryMapPartitioningList : mapPartitioningLists.entrySet()) {
+                        Map<Integer, List<List<String>>> mapPartitioningInit = new HashMap<>();
+                        for (Map.Entry<Integer, List<List<String>>> entryMapPartitioningList : mapPartitioningLists.entrySet()) {
                             StringBuffer inputBuffer = new StringBuffer();
                             Integer threadID = entryMapPartitioningList.getKey();
 
@@ -178,10 +146,9 @@ public class Main implements PartitioningInterface, SimilarityInterface {
                                 filePartThread.createNewFile();
                             }
 
-                            for (Map.Entry<Long, List<String>> entry : entryMapPartitioningList.getValue().entrySet()) {
+                            for (List<String> wordGroup : entryMapPartitioningList.getValue()){
                                 StringBuilder lineBuilder = new StringBuilder();
-                                lineBuilder.append(entry.getKey()).append(",");
-                                for (String word : entry.getValue()) {
+                                for (String word : wordGroup) {
                                     lineBuilder.append(word).append(",");
                                 }
                                 inputBuffer.append(lineBuilder.toString());
@@ -190,9 +157,9 @@ public class Main implements PartitioningInterface, SimilarityInterface {
                             FileOutputStream filePartOut = new FileOutputStream(filePartThread, true);
                             filePartOut.write(inputBuffer.toString().getBytes());
                             filePartOut.close();
-                            mapPartitioningListsTmp.put(entryMapPartitioningList.getKey(), new HashMap<Long, List<String>>());
+                            mapPartitioningInit.put(entryMapPartitioningList.getKey(), (List) new ArrayList<>());
                         }
-                        mapPartitioningLists = new HashMap<>(mapPartitioningListsTmp);
+                        mapPartitioningLists = new HashMap<>(mapPartitioningInit);
                     }
                 }
                 numLine++;
@@ -231,7 +198,6 @@ public class Main implements PartitioningInterface, SimilarityInterface {
         outPath = args[1];
         partPath = args[2];
         try {
-            progressBarPartitioning = new ProgressBar();
             callbacks = new AtomicInteger(0);
             mapPartitioningList = new ArrayList<>();
             mapPartitioning = new HashMap<>();

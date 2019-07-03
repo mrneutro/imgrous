@@ -1,5 +1,11 @@
 package it.unisa.di.soa2019;
 
+import org.tartarus.snowball.SnowballStemmer;
+import org.tartarus.snowball.ext.englishStemmer;
+import org.tartarus.snowball.ext.italianStemmer;
+import org.tartarus.snowball.ext.russianStemmer;
+import org.tartarus.snowball.ext.spanishStemmer;
+
 import java.io.*;
 import java.util.*;
 
@@ -9,14 +15,15 @@ public class PartitioningRunnable implements Runnable {
     private boolean calcMap = false;
     private boolean mapCmp = false;
     private Main main;
+    private List<List<String>> wordGroupList;
     private Map<Long, List<String>> mapPartitioningList;
     private Map<Long, Map<String, Long>> mapPartitioning;
     private Map<Long, Map<String, Long>> mapPartitioning2;
 
 
-    public PartitioningRunnable(Main main, Map<Long, List<String>> mapPartitioningList) {
+    public PartitioningRunnable(Main main, List<List<String>> wordGroupList) {
         this.main = main;
-        this.mapPartitioningList = mapPartitioningList;
+        this.wordGroupList = wordGroupList;
         calcMap = true;
     }
 
@@ -117,13 +124,29 @@ public class PartitioningRunnable implements Runnable {
         Map<String, Long> mapGroup;
         mapPartitioning = new HashMap<>();
 
-        while ((line = bufferedPart.readLine()) != null) {
-            values = line.split(",");
-            List<String> words = new ArrayList<>();
-            for (int i = 1; i < values.length; i++) {
-                words.add(values[i]);
+        HashMap<String, SnowballStemmer> stemmersMap;
+        SnowballStemmer genericStemmer = new englishStemmer();
+
+        stemmersMap = new HashMap<>(4);
+        stemmersMap.put("it", new italianStemmer());
+        stemmersMap.put("ru", new russianStemmer());
+        stemmersMap.put("es", new spanishStemmer());
+        stemmersMap.put("en", new englishStemmer());
+
+        Map<Integer, Map<Long, List<String>>> mapPartitioningLists = new HashMap<>();
+        for (int i = 0; i < main.getNumberOfProcessors(); i++) {
+            mapPartitioningLists.put(i, (Map) new HashMap<>());
+        }
+
+        for (List<String> wordList : wordGroupList) {
+            Long groupID = null;
+            String lang = wordList.get(1);
+            try {
+                groupID = Long.parseLong(String.valueOf(wordList.get(0)));
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+                continue;
             }
-            Long groupID = Long.parseLong(values[0]);
 
             if (mapPartitioning.containsKey(groupID)) {
                 mapGroup = mapPartitioning.get(groupID);
@@ -132,27 +155,96 @@ public class PartitioningRunnable implements Runnable {
                 mapPartitioning.put(groupID, mapGroup);
             }
 
-            for (String word : words) {
-                if (mapGroup.containsKey(word)) {
-                    mapGroup.put(word, mapGroup.get(word) + 1);
+            wordList = wordList.subList(2, wordList.size());
+
+            for (String word : wordList) {
+                if (word.length() == 0) {
+                    continue;
+                }
+
+                SnowballStemmer currentStemmer = null;
+                if (stemmersMap.containsKey(lang)) {
+                    currentStemmer = stemmersMap.get(lang);
                 } else {
-                    mapGroup.put(word, new Long(1));
+                    currentStemmer = genericStemmer;
+                }
+                if (StopWords.getInstance().isStopWord(word)) {
+                    continue;
+                }
+                currentStemmer.setCurrent(word);
+                currentStemmer.stem();
+                String stemmed = currentStemmer.getCurrent();
+
+                if (mapGroup.containsKey(stemmed)) {
+                    mapGroup.put(stemmed, mapGroup.get(stemmed) + 1);
+                } else {
+                    mapGroup.put(stemmed, new Long(1));
                 }
             }
-
         }
-        for (Map.Entry<Long, List<String>> entry : mapPartitioningList.entrySet()) {
-            if (mapPartitioning.containsKey(entry.getKey())) {
-                mapGroup = mapPartitioning.get(entry.getKey());
-            } else {
-                mapGroup = new HashMap<>();
-                mapPartitioning.put(entry.getKey(), mapGroup);
-            }
-            for (String word : entry.getValue()) {
-                if (mapGroup.containsKey(word)) {
-                    mapGroup.put(word, mapGroup.get(word) + 1);
+
+        while ((line = bufferedPart.readLine()) != null) {
+
+            boolean validLine = true;
+            values = line.split(",");
+            List<String> words;
+
+            if(values.length > 2) {
+
+                Long groupID = null;
+                try {
+                    groupID = Long.parseLong(values[0]);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+
+                String lang;
+                lang = values[1];
+                for (int i = 3; i < values.length ; i++) {
+                    values[2] = values[2] + "," + values[i]; // TODO use string builder here
+                }
+
+                words = Arrays.asList(values[2].split(","));
+                List<String> wordList = new ArrayList<>();
+
+                if (words.size() >= 1) {
+                    if (validLine) {
+                        for (String word : words) {
+                            if (word.length() == 0) {
+                                continue;
+                            }
+
+                            SnowballStemmer currentStemmer = null;
+                            if (stemmersMap.containsKey(lang)) {
+                                currentStemmer = stemmersMap.get(lang);
+                            } else {
+                                currentStemmer = genericStemmer;
+                            }
+                            if (StopWords.getInstance().isStopWord(word)) {
+                                continue;
+                            }
+                            currentStemmer.setCurrent(word);
+                            currentStemmer.stem();
+                            String stemmed = currentStemmer.getCurrent();
+                            wordList.add(stemmed);
+                        }
+                    }
+                }
+
+                if (mapPartitioning.containsKey(groupID)) {
+                    mapGroup = mapPartitioning.get(groupID);
                 } else {
-                    mapGroup.put(word, new Long(1));
+                    mapGroup = new HashMap<>();
+                    mapPartitioning.put(groupID, mapGroup);
+                }
+
+                for (String word : wordList) {
+                    if (mapGroup.containsKey(word)) {
+                        mapGroup.put(word, mapGroup.get(word) + 1);
+                    } else {
+                        mapGroup.put(word, new Long(1));
+                    }
                 }
             }
         }

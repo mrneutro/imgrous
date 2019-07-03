@@ -67,55 +67,18 @@ public class PartitioningRunnable implements Runnable {
                 if (mapGroup.containsKey(word)) {
                     if (mapGroup.get(word) != null)
                         try {
-                            mapGroup.put(word, mapGroup.get(word) + 1);
+                            if(groupID.equals(new Long(1096901835)) && word.equals("sa"))
+                                System.out.println(word);
+                            mapGroup.put(word, mapGroup.get(word) + mapPartitioning2.get(groupID).get(word));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                 } else {
-                    mapGroup.put(word, new Long(1));
+                    mapGroup.put(word, mapPartitioning2.get(groupID).get(word));
                 }
             }
         }
     }
-
-//    private Map<Long, Map<String, Long>> calcMap() throws IOException {
-//        String line;
-//        String[] values;
-//        BufferedReader bufferedPart = new BufferedReader(new FileReader(main.getPartPath() + (threadID % main.getNumberOfProcessors())));
-//
-//        while ((line = bufferedPart.readLine()) != null) {
-//            values = line.split(",");
-//            List<String> words = new ArrayList<>();
-//            for (int i = 1; i < values.length; i++) {
-//                words.add(values[i]);
-//            }
-//            Long groupID = Long.parseLong(values[0]);
-//            if(mapPartitioningList.containsKey(groupID)){
-//                List<String> toUpdate = mapPartitioningList.get(groupID);
-//                toUpdate.addAll(words);
-//            } else {
-//                mapPartitioningList.put(groupID, words);
-//            }
-//        }
-//        mapPartitioning = new HashMap<>();
-//        Map<String, Long> mapGroup;
-//        for (Map.Entry<Long, List<String>> entry : mapPartitioningList.entrySet()) {
-//            if (mapPartitioning.containsKey(entry.getKey())) {
-//                mapGroup = mapPartitioning.get(entry.getKey());
-//            } else {
-//                mapGroup = new HashMap<>();
-//                mapPartitioning.put(entry.getKey(), mapGroup);
-//            }
-//            for (String word : entry.getValue()) {
-//                if (mapGroup.containsKey(word)) {
-//                    mapGroup.put(word, mapGroup.get(word) + 1);
-//                } else {
-//                    mapGroup.put(word, new Long(1));
-//                }
-//            }
-//        }
-//        return mapPartitioning;
-//    }
 
     private Map<Long, Map<String, Long>> calcMap() throws IOException {
         String line;

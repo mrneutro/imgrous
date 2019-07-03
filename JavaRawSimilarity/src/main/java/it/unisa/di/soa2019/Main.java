@@ -17,7 +17,7 @@ public class Main implements PartitioningInterface, SimilarityInterface {
     private PartitioningRunnable partitioningRunnable;
     private SimilarityRunnable similarityRunnable;
 //    public final int ITER_SIZE = 10000000;
-    public final int ITER_SIZE = 1000;
+    public final int ITER_SIZE = 100000;
     private Map<Long, Map<String, Long>> mapPartitioning;
 //    private Map<Long, Map<String, Double>> mapSimilarity;
     private List<Map<Long, Map<String, Long>>> mapPartitioningList;

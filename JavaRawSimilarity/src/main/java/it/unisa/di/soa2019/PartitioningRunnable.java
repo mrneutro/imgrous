@@ -11,6 +11,7 @@ import java.util.*;
 
 public class PartitioningRunnable implements Runnable {
 
+    private File inputFile;
     private long threadID;
     private boolean calcMap = false;
     private boolean mapCmp = false;
@@ -20,11 +21,11 @@ public class PartitioningRunnable implements Runnable {
     private Map<Long, Map<String, Long>> mapPartitioning;
     private Map<Long, Map<String, Long>> mapPartitioning2;
 
-
-    public PartitioningRunnable(Main main, List<List<String>> wordGroupList) {
+    public PartitioningRunnable(Main main, File inputFile) {
         this.main = main;
-        this.wordGroupList = wordGroupList;
         calcMap = true;
+        mapPartitioning = new HashMap<>();
+        this.inputFile = inputFile;
     }
 
     public PartitioningRunnable(Main main, Map<Long, Map<String, Long>> mapPartitioning, Map<Long, Map<String, Long>> mapPartitioning2) {
@@ -38,7 +39,7 @@ public class PartitioningRunnable implements Runnable {
     @Override
     public void run() {
         threadID = Thread.currentThread().getId();
-//        System.out.println("Thread " + threadID % 4 + " running");
+//        System.out.println("Thread " + threadID + " running");
         try {
             if (calcMap) {
                 main.callback(calcMap());
@@ -67,8 +68,6 @@ public class PartitioningRunnable implements Runnable {
                 if (mapGroup.containsKey(word)) {
                     if (mapGroup.get(word) != null)
                         try {
-                            if(groupID.equals(new Long(1096901835)) && word.equals("sa"))
-                                System.out.println(word);
                             mapGroup.put(word, mapGroup.get(word) + mapPartitioning2.get(groupID).get(word));
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -82,8 +81,9 @@ public class PartitioningRunnable implements Runnable {
 
     private Map<Long, Map<String, Long>> calcMap() throws IOException {
         String line;
+        int numLine = 0;
         String[] values;
-        BufferedReader bufferedPart = new BufferedReader(new FileReader(main.getPartPath() + (threadID % main.getNumberOfProcessors())));
+        BufferedReader bufferedPart = new BufferedReader(new FileReader(inputFile));
         Map<String, Long> mapGroup;
         mapPartitioning = new HashMap<>();
 
@@ -96,83 +96,45 @@ public class PartitioningRunnable implements Runnable {
         stemmersMap.put("es", new spanishStemmer());
         stemmersMap.put("en", new englishStemmer());
 
-        Map<Integer, Map<Long, List<String>>> mapPartitioningLists = new HashMap<>();
-        for (int i = 0; i < main.getNumberOfProcessors(); i++) {
-            mapPartitioningLists.put(i, (Map) new HashMap<>());
-        }
-
-        for (List<String> wordList : wordGroupList) {
-            Long groupID = null;
-            String lang = wordList.get(1);
-            try {
-                groupID = Long.parseLong(String.valueOf(wordList.get(0)));
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-                continue;
-            }
-
-            if (mapPartitioning.containsKey(groupID)) {
-                mapGroup = mapPartitioning.get(groupID);
-            } else {
-                mapGroup = new HashMap<>();
-                mapPartitioning.put(groupID, mapGroup);
-            }
-
-            wordList = wordList.subList(2, wordList.size());
-
-            for (String word : wordList) {
-                if (word.length() == 0) {
-                    continue;
-                }
-
-                SnowballStemmer currentStemmer = null;
-                if (stemmersMap.containsKey(lang)) {
-                    currentStemmer = stemmersMap.get(lang);
-                } else {
-                    currentStemmer = genericStemmer;
-                }
-                if (StopWords.getInstance().isStopWord(word)) {
-                    continue;
-                }
-                currentStemmer.setCurrent(word);
-                currentStemmer.stem();
-                String stemmed = currentStemmer.getCurrent();
-
-                if (mapGroup.containsKey(stemmed)) {
-                    mapGroup.put(stemmed, mapGroup.get(stemmed) + 1);
-                } else {
-                    mapGroup.put(stemmed, new Long(1));
-                }
-            }
-        }
-
         while ((line = bufferedPart.readLine()) != null) {
-
-            boolean validLine = true;
-            values = line.split(",");
-            List<String> words;
-
-            if(values.length > 2) {
-
-                Long groupID = null;
-                try {
-                    groupID = Long.parseLong(values[0]);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                    continue;
-                }
-
+            if ((numLine % main.getNumberOfProcessors()) == (threadID % main.getNumberOfProcessors())) {
+                values = line.split(",");
                 String lang;
-                lang = values[1];
-                for (int i = 3; i < values.length ; i++) {
-                    values[2] = values[2] + "," + values[i]; // TODO use string builder here
-                }
 
-                words = Arrays.asList(values[2].split(","));
-                List<String> wordList = new ArrayList<>();
+                if (values.length > 4) {
+                    if (values.length > 5) {
+                        lang = values[values.length - 1];
+                        for (int i = 4; i < values.length - 1; i++) {
+                            values[3] = values[3] + values[i]; // TODO use string builder here
+                        }
+                    } else {
+                        try {
+                            lang = values[4];
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            lang = "unknown";
+                        }
+                    }
 
-                if (words.size() >= 1) {
-                    if (validLine) {
+                    String[] words = values[3].replaceAll("\\n", " ").replaceAll("[^\b a-zA-Z0-9'а-яА-Я]", "").trim().toLowerCase().split(" ");
+                    String groupIDstring = values[2];
+                    Long groupID;
+                    if (words != null && words.length >= 1) {
+                        try {
+                            groupID = Long.parseLong(groupIDstring);
+                        } catch (NumberFormatException e) {
+//                            e.printStackTrace();
+                            numLine++;
+                            continue;
+                        }
+
+                        if (mapPartitioning.containsKey(groupID)) {
+                            mapGroup = mapPartitioning.get(groupID);
+                        } else {
+                            mapGroup = new HashMap<>();
+                            mapPartitioning.put(groupID, mapGroup);
+                        }
+
                         for (String word : words) {
                             if (word.length() == 0) {
                                 continue;
@@ -190,26 +152,17 @@ public class PartitioningRunnable implements Runnable {
                             currentStemmer.setCurrent(word);
                             currentStemmer.stem();
                             String stemmed = currentStemmer.getCurrent();
-                            wordList.add(stemmed);
+
+                            if (mapGroup.containsKey(stemmed)) {
+                                mapGroup.put(stemmed, mapGroup.get(stemmed) + 1);
+                            } else {
+                                mapGroup.put(stemmed, new Long(1));
+                            }
                         }
                     }
                 }
-
-                if (mapPartitioning.containsKey(groupID)) {
-                    mapGroup = mapPartitioning.get(groupID);
-                } else {
-                    mapGroup = new HashMap<>();
-                    mapPartitioning.put(groupID, mapGroup);
-                }
-
-                for (String word : wordList) {
-                    if (mapGroup.containsKey(word)) {
-                        mapGroup.put(word, mapGroup.get(word) + 1);
-                    } else {
-                        mapGroup.put(word, new Long(1));
-                    }
-                }
             }
+            numLine++;
         }
         return mapPartitioning;
     }
